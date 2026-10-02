@@ -78,8 +78,8 @@ def gws_account_remove(email: str) -> dict:
 
 @mcp.tool()
 def gmail_search(
+    account: str,
     query: str = "",
-    account: str | None = None,
     limit: int = 10,
     include_spam_trash: bool = False,
     label_filter: list[str] | None = None,
@@ -102,7 +102,7 @@ def gmail_search(
 @mcp.tool()
 def gmail_read(
     message_id: str,
-    account: str | None = None,
+    account: str,
     keep_html: bool = False,
     full_thread: bool = False,
 ) -> dict:
@@ -124,7 +124,7 @@ def gmail_send(
     to: list[str],
     subject: str,
     body: str,
-    account: str | None = None,
+    account: str,
     from_alias: str | None = None,
     cc: list[str] | None = None,
     bcc: list[str] | None = None,
@@ -152,7 +152,7 @@ def gmail_draft(
     to: list[str],
     subject: str,
     body: str,
-    account: str | None = None,
+    account: str,
     from_alias: str | None = None,
     cc: list[str] | None = None,
     bcc: list[str] | None = None,
@@ -168,7 +168,7 @@ def gmail_draft(
 def gmail_reply(
     message_id: str,
     body: str,
-    account: str | None = None,
+    account: str,
     reply_all: bool = False,
     dry_run: bool = False,
 ) -> dict:
@@ -185,7 +185,7 @@ def gmail_reply(
 
 
 @mcp.tool()
-def gmail_labels_list(account: str | None = None) -> list[dict]:
+def gmail_labels_list(account: str) -> list[dict]:
     """List all labels on the account."""
     return gmail_tools.labels_list(account=account)
 
@@ -193,9 +193,9 @@ def gmail_labels_list(account: str | None = None) -> list[dict]:
 @mcp.tool()
 def gmail_label_apply(
     message_ids: list[str],
+    account: str,
     add: list[str] | None = None,
     remove: list[str] | None = None,
-    account: str | None = None,
 ) -> dict:
     """Add or remove labels on messages. Batch up to 1000 per call."""
     return gmail_tools.label_apply(
@@ -204,7 +204,7 @@ def gmail_label_apply(
 
 
 @mcp.tool()
-def gmail_archive(message_ids: list[str], account: str | None = None) -> dict:
+def gmail_archive(message_ids: list[str], account: str) -> dict:
     """Archive messages: removes INBOX label but keeps them in All Mail, permanently searchable.
     No deletion. Use this to declutter without destroying.
     Use gmail_trash for soft-delete (messages auto-purged after 30 days)."""
@@ -212,14 +212,14 @@ def gmail_archive(message_ids: list[str], account: str | None = None) -> dict:
 
 
 @mcp.tool()
-def gmail_trash(message_ids: list[str], account: str | None = None) -> dict:
+def gmail_trash(message_ids: list[str], account: str) -> dict:
     """Move messages to Trash. Soft delete: auto-purged after 30 days, not easily searchable.
     Use gmail_archive to remove from inbox without any deletion risk."""
     return gmail_tools.trash(message_ids=message_ids, account=account)
 
 
 @mcp.tool()
-def gmail_attachments_list(message_id: str, account: str | None = None) -> list[dict]:
+def gmail_attachments_list(message_id: str, account: str) -> list[dict]:
     """List a message's attachments: filename, mime type, size, and the
     attachment_id gmail_attachment_save needs. Metadata only, no download."""
     return gmail_tools.attachments_list(message_id=message_id, account=account)
@@ -229,9 +229,9 @@ def gmail_attachments_list(message_id: str, account: str | None = None) -> list[
 def gmail_attachment_save(
     message_id: str,
     attachment_id: str,
+    account: str,
     filename: str | None = None,
     dest_dir: str | None = None,
-    account: str | None = None,
 ) -> dict:
     """Download one attachment to a local file and return its path, so the
     caller can read it directly (PDF, image, docx, ...).
@@ -245,7 +245,7 @@ def gmail_attachment_save(
 
 
 @mcp.tool()
-def gmail_sendas_list(account: str | None = None) -> list[dict]:
+def gmail_sendas_list(account: str) -> list[dict]:
     """List Send-As identities for this account (the aliases it can send as)."""
     return gmail_tools.sendas_list(account=account)
 
@@ -256,14 +256,14 @@ def gmail_sendas_list(account: str | None = None) -> list[dict]:
 
 
 @mcp.tool()
-def cal_list_calendars(account: str | None = None) -> list[dict]:
+def cal_list_calendars(account: str) -> list[dict]:
     """List all calendars visible to this account."""
     return calendar_tools.list_calendars(account=account)
 
 
 @mcp.tool()
 def cal_list_events(
-    account: str | None = None,
+    account: str,
     calendar_id: str = "primary",
     time_min: str = "now",
     time_max: str | None = None,
@@ -296,7 +296,7 @@ def cal_create_event(
     summary: str,
     start: str,
     end: str,
-    account: str | None = None,
+    account: str,
     calendar_id: str = "primary",
     description: str | None = None,
     location: str | None = None,
@@ -333,7 +333,7 @@ def cal_create_event(
 @mcp.tool()
 def cal_update_event(
     event_id: str,
-    account: str | None = None,
+    account: str,
     calendar_id: str = "primary",
     summary: str | None = None,
     start: str | None = None,
@@ -372,7 +372,7 @@ def cal_update_event(
 @mcp.tool()
 def cal_delete_event(
     event_id: str,
-    account: str | None = None,
+    account: str,
     calendar_id: str = "primary",
     send_updates: str = "all",
 ) -> dict:
@@ -387,7 +387,7 @@ def cal_delete_event(
 def cal_freebusy(
     time_min: str,
     time_max: str,
-    account: str | None = None,
+    account: str,
     emails: list[str] | None = None,
     time_zone: str | None = None,
 ) -> dict:
@@ -408,7 +408,7 @@ def cal_freebusy(
 def cal_respond(
     event_id: str,
     response: str,
-    account: str | None = None,
+    account: str,
     calendar_id: str = "primary",
 ) -> dict:
     """Respond to an event invite.
@@ -428,8 +428,8 @@ def cal_respond(
 
 @mcp.tool()
 def drive_search(
+    account: str,
     query: str = "",
-    account: str | None = None,
     limit: int = 10,
     order_by: str = "modifiedTime desc",
     include_trashed: bool = False,
@@ -454,7 +454,7 @@ def drive_search(
 @mcp.tool()
 def drive_read_file(
     file_id: str,
-    account: str | None = None,
+    account: str,
     include_content: bool = False,
     export_mime: str | None = None,
     max_chars: int = 50_000,
@@ -477,8 +477,8 @@ def drive_read_file(
 
 @mcp.tool()
 def drive_list_folder(
+    account: str,
     folder_id: str = "root",
-    account: str | None = None,
     limit: int = 50,
     order_by: str = "name",
 ) -> list[dict]:
@@ -491,8 +491,8 @@ def drive_list_folder(
 @mcp.tool()
 def drive_create_folder(
     name: str,
+    account: str,
     parent_id: str | None = None,
-    account: str | None = None,
 ) -> dict:
     """Create a new folder. If parent_id is None, creates at My Drive root."""
     return drive_tools.create_folder(name=name, parent_id=parent_id, account=account)
@@ -501,11 +501,11 @@ def drive_create_folder(
 @mcp.tool()
 def drive_upload(
     local_path: str,
+    account: str,
     name: str | None = None,
     parent_id: str | None = None,
     mime: str | None = None,
     convert_to_google: bool = False,
-    account: str | None = None,
 ) -> dict:
     """Upload a local file to Drive.
 
@@ -523,7 +523,7 @@ def drive_upload(
 def drive_move(
     file_id: str,
     new_parent_id: str,
-    account: str | None = None,
+    account: str,
 ) -> dict:
     """Move a file to a different folder."""
     return drive_tools.move(
@@ -535,7 +535,7 @@ def drive_move(
 def drive_rename(
     file_id: str,
     new_name: str,
-    account: str | None = None,
+    account: str,
 ) -> dict:
     """Rename a file or folder."""
     return drive_tools.rename(file_id=file_id, new_name=new_name, account=account)
@@ -545,10 +545,10 @@ def drive_rename(
 def drive_share(
     file_id: str,
     email: str,
+    account: str,
     role: str = "writer",
     send_notification: bool = False,
     message: str | None = None,
-    account: str | None = None,
 ) -> dict:
     """Grant access to a file for someone who does not yet have a permission entry.
     Creates a new permission. Requires their email address.
@@ -566,7 +566,7 @@ def drive_share(
 
 
 @mcp.tool()
-def drive_trash(file_id: str, account: str | None = None, dry_run: bool = False) -> dict:
+def drive_trash(file_id: str, account: str, dry_run: bool = False) -> dict:
     """Move a file to Trash (soft delete, recoverable for 30 days). DESTRUCTIVE.
 
     Args:
@@ -576,13 +576,13 @@ def drive_trash(file_id: str, account: str | None = None, dry_run: bool = False)
 
 
 @mcp.tool()
-def drive_untrash(file_id: str, account: str | None = None) -> dict:
+def drive_untrash(file_id: str, account: str) -> dict:
     """Restore a file from Trash."""
     return drive_tools.untrash(file_id=file_id, account=account)
 
 
 @mcp.tool()
-def drive_permission_list(file_id: str, account: str | None = None) -> list[dict]:
+def drive_permission_list(file_id: str, account: str) -> list[dict]:
     """List all permissions (who has access) on a file."""
     return drive_tools.permission_list(file_id=file_id, account=account)
 
@@ -592,7 +592,7 @@ def drive_permission_update(
     file_id: str,
     permission_id: str,
     role: str,
-    account: str | None = None,
+    account: str,
 ) -> dict:
     """Change the access role of someone who already has a permission on this file.
     Requires a permission_id — get it first from drive_permission_list.
@@ -611,7 +611,7 @@ def drive_permission_update(
 def drive_permission_delete(
     file_id: str,
     permission_id: str,
-    account: str | None = None,
+    account: str,
 ) -> dict:
     """Revoke a permission on a file. DESTRUCTIVE — removes someone's access immediately.
     Get permission_id from drive_permission_list first."""
@@ -622,7 +622,7 @@ def drive_permission_delete(
 
 @mcp.tool()
 def drive_shared_drives_list(
-    account: str | None = None,
+    account: str,
     limit: int = 50,
 ) -> list[dict]:
     """List shared drives this account can access."""
@@ -632,7 +632,7 @@ def drive_shared_drives_list(
 @mcp.tool()
 def drive_comments_list(
     file_id: str,
-    account: str | None = None,
+    account: str,
     include_deleted: bool = False,
     limit: int = 50,
 ) -> list[dict]:
@@ -647,7 +647,7 @@ def drive_comments_list(
 def drive_comment_add(
     file_id: str,
     content: str,
-    account: str | None = None,
+    account: str,
     anchor: str | None = None,
 ) -> dict:
     """Add a sidebar comment (annotation) to a Drive file — not text to the document body.
@@ -663,7 +663,7 @@ def drive_comment_reply(
     file_id: str,
     comment_id: str,
     content: str,
-    account: str | None = None,
+    account: str,
 ) -> dict:
     """Reply to an existing comment."""
     return drive_tools.comment_reply(
@@ -675,7 +675,7 @@ def drive_comment_reply(
 def drive_comment_resolve(
     file_id: str,
     comment_id: str,
-    account: str | None = None,
+    account: str,
 ) -> dict:
     """Mark a comment as resolved."""
     return drive_tools.comment_resolve(
@@ -691,9 +691,9 @@ def drive_comment_resolve(
 @mcp.tool()
 def docs_create(
     title: str,
+    account: str,
     body: str = "",
     parent_folder_id: str | None = None,
-    account: str | None = None,
 ) -> dict:
     """Create a new Google Doc. Optional initial body text."""
     return docs_tools.create(
@@ -704,7 +704,7 @@ def docs_create(
 @mcp.tool()
 def docs_read(
     document_id: str,
-    account: str | None = None,
+    account: str,
     structured: bool = False,
     max_chars: int = 50_000,
 ) -> dict:
@@ -723,7 +723,7 @@ def docs_read(
 def docs_append(
     document_id: str,
     text: str,
-    account: str | None = None,
+    account: str,
 ) -> dict:
     """Append text to the end of a Doc body."""
     return docs_tools.append(document_id=document_id, text=text, account=account)
@@ -734,7 +734,7 @@ def docs_insert_at(
     document_id: str,
     text: str,
     index: int,
-    account: str | None = None,
+    account: str,
 ) -> dict:
     """Insert text at a specific character index within the Doc body. Index 1 = start of body.
     Use docs_append instead when adding to the end — it calculates the index automatically."""
@@ -748,8 +748,8 @@ def docs_replace_text(
     document_id: str,
     find: str,
     replace: str,
+    account: str,
     match_case: bool = True,
-    account: str | None = None,
 ) -> dict:
     """Find-and-replace text across the entire Doc. Returns count replaced."""
     return docs_tools.replace_text(
@@ -761,8 +761,8 @@ def docs_replace_text(
 @mcp.tool()
 def docs_export(
     document_id: str,
+    account: str,
     mime: str = "text/markdown",
-    account: str | None = None,
     max_chars: int = 100_000,
 ) -> dict:
     """Export a Doc to a formatted output file. Default is markdown (headers, bold, lists preserved).
@@ -782,7 +782,7 @@ def docs_export(
 @mcp.tool()
 def docs_suggestions_list(
     document_id: str,
-    account: str | None = None,
+    account: str,
 ) -> dict:
     """List pending suggestions (tracked changes) in a Doc. Per-suggestion
     accept/reject isn't supported by Docs API; use docs_suggestions_accept_all
@@ -793,7 +793,7 @@ def docs_suggestions_list(
 @mcp.tool()
 def docs_suggestions_accept_all(
     document_id: str,
-    account: str | None = None,
+    account: str,
 ) -> dict:
     """Accept ALL pending suggestions by rewriting the Doc. DESTRUCTIVE — rewrites the entire
     document body; formatting metadata is lost. No per-suggestion accept via API.
@@ -804,7 +804,7 @@ def docs_suggestions_accept_all(
 @mcp.tool()
 def docs_suggestions_reject_all(
     document_id: str,
-    account: str | None = None,
+    account: str,
 ) -> dict:
     """Reject ALL pending suggestions by rewriting the Doc. DESTRUCTIVE — rewrites the entire
     document body; suggestions are permanently discarded. No per-suggestion reject via API.
@@ -820,8 +820,8 @@ def docs_suggestions_reject_all(
 @mcp.tool()
 def sheets_create(
     title: str,
+    account: str,
     parent_folder_id: str | None = None,
-    account: str | None = None,
 ) -> dict:
     """Create a new Google Sheets workbook."""
     return sheets_tools.create_spreadsheet(
@@ -832,7 +832,7 @@ def sheets_create(
 @mcp.tool()
 def sheets_list_sheets(
     spreadsheet_id: str,
-    account: str | None = None,
+    account: str,
 ) -> list[dict]:
     """List all tabs in a workbook with their dimensions."""
     return sheets_tools.list_sheets(spreadsheet_id=spreadsheet_id, account=account)
@@ -842,9 +842,9 @@ def sheets_list_sheets(
 def sheets_add_sheet(
     spreadsheet_id: str,
     title: str,
+    account: str,
     rows: int = 1000,
     cols: int = 26,
-    account: str | None = None,
 ) -> dict:
     """Add a new tab (sheet) to an existing workbook."""
     return sheets_tools.add_sheet(
@@ -857,7 +857,7 @@ def sheets_add_sheet(
 def sheets_read_range(
     spreadsheet_id: str,
     range_a1: str,
-    account: str | None = None,
+    account: str,
     value_render: str = "FORMATTED_VALUE",
     date_render: str = "FORMATTED_STRING",
 ) -> dict:
@@ -878,7 +878,7 @@ def sheets_write_range(
     spreadsheet_id: str,
     range_a1: str,
     values: list[list[Any]],
-    account: str | None = None,
+    account: str,
     value_input: str = "USER_ENTERED",
 ) -> dict:
     """Write a 2D array of values to a range. Overwrites existing cells.
@@ -897,7 +897,7 @@ def sheets_append(
     spreadsheet_id: str,
     range_a1: str,
     values: list[list[Any]],
-    account: str | None = None,
+    account: str,
     value_input: str = "USER_ENTERED",
     insert_data: str = "INSERT_ROWS",
 ) -> dict:
@@ -917,7 +917,7 @@ def sheets_append(
 def sheets_clear_range(
     spreadsheet_id: str,
     range_a1: str,
-    account: str | None = None,
+    account: str,
 ) -> dict:
     """Clear cell values in a range. Leaves formatting intact."""
     return sheets_tools.clear_range(
@@ -929,7 +929,7 @@ def sheets_clear_range(
 def sheets_batch_read(
     spreadsheet_id: str,
     ranges: list[str],
-    account: str | None = None,
+    account: str,
     value_render: str = "FORMATTED_VALUE",
 ) -> dict:
     """Read multiple ranges in one API call. Cheaper than N sheets_read_range."""
@@ -943,7 +943,7 @@ def sheets_batch_read(
 def sheets_batch_write(
     spreadsheet_id: str,
     updates: list[dict],
-    account: str | None = None,
+    account: str,
     value_input: str = "USER_ENTERED",
 ) -> dict:
     """Write multiple ranges in one API call.
@@ -960,7 +960,7 @@ def sheets_batch_write(
 @mcp.tool()
 def sheets_named_ranges_list(
     spreadsheet_id: str,
-    account: str | None = None,
+    account: str,
 ) -> list[dict]:
     """List all named ranges in a workbook."""
     return sheets_tools.named_ranges_list(spreadsheet_id=spreadsheet_id, account=account)
@@ -975,7 +975,7 @@ def sheets_named_range_add(
     end_row: int,
     start_col: int,
     end_col: int,
-    account: str | None = None,
+    account: str,
 ) -> dict:
     """Create a named range (zero-based indices, end-exclusive). Get sheet_id from sheets_list_sheets."""
     return sheets_tools.named_range_add(
@@ -989,7 +989,7 @@ def sheets_named_range_add(
 def sheets_named_range_delete(
     spreadsheet_id: str,
     named_range_id: str,
-    account: str | None = None,
+    account: str,
 ) -> dict:
     """Delete a named range by id."""
     return sheets_tools.named_range_delete(
@@ -1007,10 +1007,10 @@ def sheets_conditional_format_add(
     end_col: int,
     condition_type: str,
     condition_values: list[str],
+    account: str,
     bg_color: dict | None = None,
     text_color: dict | None = None,
     bold: bool = False,
-    account: str | None = None,
 ) -> dict:
     """Add a conditional formatting rule.
 
@@ -1039,10 +1039,10 @@ def sheets_data_validation_add(
     end_col: int,
     condition_type: str,
     condition_values: list[str],
+    account: str,
     strict: bool = True,
     show_dropdown: bool = True,
     help_text: str | None = None,
-    account: str | None = None,
 ) -> dict:
     """Set data validation on a range.
 
