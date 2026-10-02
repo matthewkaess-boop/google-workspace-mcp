@@ -20,7 +20,8 @@ from email.utils import parseaddr
 from typing import Any
 
 import audit
-from accounts import service
+import guards
+from accounts import _resolve, service
 
 # The write-audit log lives in audit.py: one implementation instead of three
 # identical copies that each had to be fixed separately (missing parent dir,
@@ -318,10 +319,12 @@ def send(
     `from_alias` lets you send as a configured Send-As identity.
     If dry_run=True, returns what WOULD be sent without calling the API.
     """
+    email = _resolve(account)
     raw, _ = _build_raw(to, subject, body, from_alias=from_alias, cc=cc, bcc=bcc, reply_to=reply_to)
     if dry_run:
         return {
             "dry_run": True,
+            "account": email,
             "to": to,
             "subject": subject,
             "from_alias": from_alias,
@@ -329,10 +332,13 @@ def send(
             "body_preview": body[:500],
             "status": "NOT SENT — dry_run=True",
         }
-    svc = service("gmail", "v1", account=account)
+    svc = service("gmail", "v1", account=email)
     sent = svc.users().messages().send(userId="me", body={"raw": raw}).execute()
-    _audit("gmail_send", f"account={account or 'default'} to={to} subject={subject!r}")
-    return {"id": sent["id"], "thread_id": sent.get("threadId"), "status": "sent"}
+    _audit(
+        "gmail_send",
+        f"account={email} from={from_alias or email} to={to} cc={cc} bcc={bcc} subject={subject!r}",
+    )
+    return {"id": sent["id"], "thread_id": sent.get("threadId"), "status": "sent", "account": email}
 
 
 def draft(
@@ -344,12 +350,19 @@ def draft(
     cc: list[str] | None = None,
     bcc: list[str] | None = None,
 ) -> dict:
-    svc = service("gmail", "v1", account=account)
+    email = _resolve(account)
+    svc = service("gmail", "v1", account=email)
     raw, _ = _build_raw(to, subject, body, from_alias=from_alias, cc=cc, bcc=bcc)
     created = (
         svc.users().drafts().create(userId="me", body={"message": {"raw": raw}}).execute()
     )
-    return {"draft_id": created["id"], "message_id": created["message"]["id"], "status": "draft"}
+    _audit("gmail_draft", f"account={email} to={to} subject={subject!r}")
+    return {
+        "draft_id": created["id"],
+        "message_id": created["message"]["id"],
+        "status": "draft",
+        "account": email,
+    }
 
 
 def reply(
@@ -363,7 +376,8 @@ def reply(
 
     If dry_run=True, shows what WOULD be sent without sending.
     """
-    svc = service("gmail", "v1", account=account)
+    email = _resolve(account)
+    svc = service("gmail", "v1", account=email)
     original = svc.users().messages().get(userId="me", id=message_id, format="metadata").execute()
     h = _headers_dict(original)
 
@@ -384,6 +398,7 @@ def reply(
     if dry_run:
         return {
             "dry_run": True,
+            "account": email,
             "to": to_list,
             "subject": subject,
             "body_preview": body[:500],
@@ -405,8 +420,8 @@ def reply(
         .send(userId="me", body={"raw": raw, "threadId": original["threadId"]})
         .execute()
     )
-    _audit("gmail_reply", f"account={account or 'default'} reply_to={message_id}")
-    return {"id": sent["id"], "thread_id": sent["threadId"], "status": "sent"}
+    _audit("gmail_reply", f"account={email} reply_to={message_id} to={to_list} cc={cc_list}")
+    return {"id": sent["id"], "thread_id": sent["threadId"], "status": "sent", "account": email}
 
 
 def labels_list(account: str | None = None) -> list[dict]:
@@ -431,6 +446,7 @@ def label_apply(
         userId="me",
         body={"ids": message_ids, "addLabelIds": add_ids, "removeLabelIds": remove_ids},
     ).execute()
+    _audit("gmail_label_apply", f"account={_resolve(account)} count={len(message_ids)} add={add} remove={remove}")
     return {"count": len(message_ids), "added": add or [], "removed": remove or []}
 
 
@@ -439,6 +455,7 @@ def archive(message_ids: list[str], account: str | None = None) -> dict:
     svc.users().messages().batchModify(
         userId="me", body={"ids": message_ids, "removeLabelIds": ["INBOX"]}
     ).execute()
+    _audit("gmail_archive", f"account={_resolve(account)} ids={message_ids}")
     return {"count": len(message_ids), "status": "archived"}
 
 
@@ -446,10 +463,11 @@ def trash(message_ids: list[str], account: str | None = None) -> dict:
     svc = service("gmail", "v1", account=account)
     for mid in message_ids:
         svc.users().messages().trash(userId="me", id=mid).execute()
+    _audit("gmail_trash", f"account={_resolve(account)} ids={message_ids}")
     return {"count": len(message_ids), "status": "trashed"}
 
 
-_DOWNLOADS_DIR = pathlib.Path.home() / ".claude" / "google-workspace-mcp" / "downloads"
+_DOWNLOADS_DIR = guards.DOWNLOADS_DIR
 
 # Characters Windows forbids in a filename, plus the separators every platform
 # forbids. NUL is in here for the same reason it is on POSIX.
@@ -568,10 +586,13 @@ def attachment_save(
     padded = data + "=" * (-len(data) % 4)
     raw = base64.urlsafe_b64decode(padded)
 
-    out_dir = pathlib.Path(dest_dir).expanduser() if dest_dir else _DOWNLOADS_DIR
+    # dest_dir is model-chosen and the attachment is attacker-controlled, so it
+    # must stay inside an allowed root (default: the downloads folder).
+    out_dir = guards.require_within_roots(dest_dir, "dest_dir") if dest_dir else _DOWNLOADS_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
     fallback = f"attachment-{attachment_id[:8]}"
     name = _safe_filename(filename or fallback, fallback)
     path = out_dir / name
     path.write_bytes(raw)
+    _audit("gmail_attachment_save", f"account={_resolve(account)} message={message_id} path={path}")
     return {"path": str(path), "filename": name, "bytes": len(raw)}

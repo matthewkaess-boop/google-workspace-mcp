@@ -16,7 +16,8 @@ from typing import Any
 from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 
 import audit
-from accounts import service
+import guards
+from accounts import _resolve, service
 
 # The write-audit log lives in audit.py: one implementation instead of three
 # identical copies that each had to be fixed separately (missing parent dir,
@@ -206,7 +207,12 @@ def upload(
         convert_to_google: If True and the file is a doc/csv/xlsx, convert to
             Docs/Sheets on upload.
     """
-    svc = service("drive", "v3", account=account)
+    email = _resolve(account)
+    # local_path is model-chosen: confine it so an injected instruction cannot
+    # exfiltrate arbitrary local files (keys, dotfiles) to Drive.
+    safe_path = guards.require_within_roots(local_path, "local_path")
+    local_path = str(safe_path)
+    svc = service("drive", "v3", account=email)
     body: dict[str, Any] = {"name": name or local_path.rsplit("/", 1)[-1]}
     if parent_id:
         body["parents"] = [parent_id]
@@ -225,6 +231,7 @@ def upload(
         .create(body=body, media_body=media, fields=_BASE_FIELDS, supportsAllDrives=True)
         .execute()
     )
+    _audit("drive_upload", f"account={email} local_path={local_path} drive_id={created.get('id')} name={body['name']!r}")
     return _summary(created)
 
 
@@ -251,6 +258,7 @@ def move(
         )
         .execute()
     )
+    _audit("drive_move", f"account={_resolve(account)} file_id={file_id} to_parent={new_parent_id}")
     return _summary(updated)
 
 
@@ -266,6 +274,7 @@ def rename(file_id: str, new_name: str, account: str | None = None) -> dict:
         )
         .execute()
     )
+    _audit("drive_rename", f"account={_resolve(account)} file_id={file_id} new_name={new_name!r}")
     return _summary(updated)
 
 
@@ -282,7 +291,9 @@ def share(
     Args:
         role: 'reader' | 'commenter' | 'writer' | 'fileOrganizer' | 'organizer' | 'owner'.
     """
-    svc = service("drive", "v3", account=account)
+    guards.refuse_owner_role(role)
+    acct = _resolve(account)
+    svc = service("drive", "v3", account=acct)
     permission = {"type": "user", "role": role, "emailAddress": email}
     created = (
         svc.permissions()
@@ -296,7 +307,8 @@ def share(
         )
         .execute()
     )
-    return {"file_id": file_id, **created}
+    _audit("drive_share", f"account={acct} file_id={file_id} with={email} role={role} notify={send_notification}")
+    return {"file_id": file_id, "account": acct, **created}
 
 
 def trash(file_id: str, account: str | None = None, dry_run: bool = False) -> dict:
@@ -319,7 +331,7 @@ def trash(file_id: str, account: str | None = None, dry_run: bool = False) -> di
         )
         .execute()
     )
-    _audit("drive_trash", f"account={account or 'default'} file_id={file_id} name={meta.get('name')!r}")
+    _audit("drive_trash", f"account={_resolve(account)} file_id={file_id} name={meta.get('name')!r}")
     return _summary(updated)
 
 
@@ -335,6 +347,7 @@ def untrash(file_id: str, account: str | None = None) -> dict:
         )
         .execute()
     )
+    _audit("drive_untrash", f"account={_resolve(account)} file_id={file_id}")
     return _summary(updated)
 
 
@@ -364,6 +377,7 @@ def permission_update(
     Args:
         role: 'reader' | 'commenter' | 'writer' | 'fileOrganizer' | 'organizer' | 'owner'.
     """
+    guards.refuse_owner_role(role)
     svc = service("drive", "v3", account=account)
     updated = (
         svc.permissions()
@@ -376,6 +390,7 @@ def permission_update(
         )
         .execute()
     )
+    _audit("drive_permission_update", f"account={_resolve(account)} file_id={file_id} perm={permission_id} role={role}")
     return {"file_id": file_id, **updated}
 
 
@@ -391,7 +406,7 @@ def permission_delete(
         permissionId=permission_id,
         supportsAllDrives=True,
     ).execute()
-    _audit("drive_permission_delete", f"account={account or 'default'} file_id={file_id} perm={permission_id}")
+    _audit("drive_permission_delete", f"account={_resolve(account)} file_id={file_id} perm={permission_id}")
     return {"file_id": file_id, "permission_id": permission_id, "status": "deleted"}
 
 

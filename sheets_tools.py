@@ -11,7 +11,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from accounts import service
+import audit
+from accounts import _resolve, service
+
+_audit = audit.record
 
 
 def create_spreadsheet(
@@ -147,6 +150,7 @@ def write_range(
         valueInputOption=value_input,
         body={"values": values},
     ).execute()
+    _audit("sheets_write_range", f"account={_resolve(account)} sheet={spreadsheet_id} range={range_a1}")
     return {
         "spreadsheet_id": spreadsheet_id,
         "range": resp.get("updatedRange"),
@@ -179,6 +183,7 @@ def append_rows(
         body={"values": values},
     ).execute()
     updates = resp.get("updates", {})
+    _audit("sheets_append", f"account={_resolve(account)} sheet={spreadsheet_id} range={range_a1} rows={len(values)}")
     return {
         "spreadsheet_id": spreadsheet_id,
         "range": updates.get("updatedRange"),
@@ -422,6 +427,7 @@ def batch_write(
         spreadsheetId=spreadsheet_id,
         body={"valueInputOption": value_input, "data": data},
     ).execute()
+    _audit("sheets_batch_write", f"account={_resolve(account)} sheet={spreadsheet_id} ranges={[u['range'] for u in updates]}")
     return {
         "spreadsheet_id": spreadsheet_id,
         "total_updated_cells": resp.get("totalUpdatedCells"),

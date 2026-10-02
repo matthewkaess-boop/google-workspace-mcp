@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 import audit
-from accounts import service
+from accounts import _resolve, service
 
 # The write-audit log lives in audit.py: one implementation instead of three
 # identical copies that each had to be fixed separately (missing parent dir,
@@ -74,6 +74,7 @@ def create(
             fields="id,parents",
         ).execute()
 
+    _audit("docs_create", f"account={_resolve(account)} doc={doc_id} title={title!r}")
     return {"id": doc_id, "title": title, "link": f"https://docs.google.com/document/d/{doc_id}/edit"}
 
 
@@ -131,6 +132,7 @@ def append(document_id: str, text: str, account: str | None = None) -> dict:
         documentId=document_id,
         body={"requests": [{"insertText": {"location": {"index": insert_at}, "text": text}}]},
     ).execute()
+    _audit("docs_append", f"account={_resolve(account)} doc={document_id} chars={len(text)}")
     return {"id": document_id, "appended_chars": len(text), "status": "ok"}
 
 
@@ -159,7 +161,7 @@ def replace_text(
     occurrences = 0
     for r in resp.get("replies", []):
         occurrences += r.get("replaceAllText", {}).get("occurrencesChanged", 0)
-    _audit("docs_replace_text", f"account={account or 'default'} doc={document_id} find={find!r} replace={replace!r} occurrences={occurrences}")
+    _audit("docs_replace_text", f"account={_resolve(account)} doc={document_id} find={find!r} replace={replace!r} occurrences={occurrences}")
     return {"id": document_id, "occurrences_replaced": occurrences}
 
 
@@ -175,6 +177,7 @@ def insert_at(
         documentId=document_id,
         body={"requests": [{"insertText": {"location": {"index": index}, "text": text}}]},
     ).execute()
+    _audit("docs_insert_at", f"account={_resolve(account)} doc={document_id} at={index} chars={len(text)}")
     return {"id": document_id, "inserted_chars": len(text), "at_index": index}
 
 
@@ -261,7 +264,7 @@ def accept_all_suggestions(
             documentId=document_id, body={"requests": requests}
         ).execute()
 
-    _audit("docs_suggestions_accept_all", f"account={account or 'default'} doc={document_id}")
+    _audit("docs_suggestions_accept_all", f"account={_resolve(account)} doc={document_id}")
     return {"id": document_id, "status": "all suggestions accepted", "char_count": len(accepted_text)}
 
 
@@ -302,7 +305,7 @@ def reject_all_suggestions(
             documentId=document_id, body={"requests": requests}
         ).execute()
 
-    _audit("docs_suggestions_reject_all", f"account={account or 'default'} doc={document_id}")
+    _audit("docs_suggestions_reject_all", f"account={_resolve(account)} doc={document_id}")
     return {"id": document_id, "status": "all suggestions rejected", "char_count": len(rejected_text)}
 
 

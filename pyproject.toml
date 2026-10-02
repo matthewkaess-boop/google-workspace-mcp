@@ -23,4 +23,4 @@ dependencies = [
 # build is deterministic and setuptools does not fail discovery with
 # "Multiple top-level modules discovered in a flat-layout".
 [tool.setuptools]
-py-modules = ["accounts", "audit", "calendar_tools", "docs_tools", "drive_tools", "gmail_tools", "server", "sheets_tools"]
+py-modules = ["accounts", "audit", "calendar_tools", "docs_tools", "drive_tools", "gmail_tools", "guards", "server", "sheets_tools"]

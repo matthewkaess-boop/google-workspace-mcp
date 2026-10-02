@@ -13,7 +13,10 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from accounts import service
+import audit
+from accounts import _resolve, service
+
+_audit = audit.record
 
 # Last resort, reached only when the machine will not say where it is and
 # nothing was configured. UTC is the honest answer to "I don't know" -- it is
@@ -306,6 +309,7 @@ def create_event(
         params["conferenceDataVersion"] = 1
 
     event = svc.events().insert(**params).execute()
+    _audit("cal_create_event", f"account={_resolve(account)} cal={calendar_id} id={event.get('id')} summary={summary!r} attendees={attendees} updates={send_updates}")
     return _summarize_event(event, verbose=True)
 
 
@@ -359,6 +363,7 @@ def update_event(
         .update(calendarId=calendar_id, eventId=event_id, body=event, sendUpdates=send_updates)
         .execute()
     )
+    _audit("cal_update_event", f"account={_resolve(account)} cal={calendar_id} id={event_id} updates={send_updates}")
     return _summarize_event(updated, verbose=True)
 
 
@@ -372,6 +377,7 @@ def delete_event(
     svc.events().delete(
         calendarId=calendar_id, eventId=event_id, sendUpdates=send_updates
     ).execute()
+    _audit("cal_delete_event", f"account={_resolve(account)} cal={calendar_id} id={event_id} updates={send_updates}")
     return {"event_id": event_id, "status": "deleted"}
 
 

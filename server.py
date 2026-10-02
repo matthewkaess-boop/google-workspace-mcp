@@ -4,8 +4,9 @@ multi-account, token-efficient.
 Registered in `~/.claude/.mcp.json` (or your project's `.mcp.json`) as `google-workspace`.
 
 Two design goals:
-1. Multi-account. Every tool takes `account` as an optional email; default is
-   taken from GWS_DEFAULT_ACCOUNT or the first authorized mailbox.
+1. Multi-account. Every tool REQUIRES `account` (an authorized email); there is
+   no implicit default, so a forgotten argument fails instead of acting on the
+   wrong mailbox.
 2. Token-efficient. Search/list tools return compact shapes. Bodies and file
    content are opt-in via include_content / format params.
 
@@ -87,7 +88,7 @@ def gmail_search(
 
     Args:
         query: Gmail search operators, e.g. 'from:someone@example.com after:2026/04/01 is:unread'.
-        account: Email address; defaults to configured default account.
+        account: REQUIRED. Email address of the authorized account to use.
         limit: 1-50. Default 10.
         include_spam_trash: Include SPAM/TRASH in results.
         label_filter: List of label names to filter by (e.g. ['INBOX', 'starred']).

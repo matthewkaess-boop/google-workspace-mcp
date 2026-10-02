@@ -116,7 +116,8 @@ def test_attachment_save_decodes_unpadded_base64url(monkeypatch, tmp_path):
         lambda *a, **k: _mock_service(attachment_get_return={"data": data, "size": len(raw)}),
     )
     result = gmail_tools.attachment_save(
-        "MSG1", "ATT1", filename="invoice.pdf", dest_dir=str(tmp_path)
+        "MSG1", "ATT1", filename="invoice.pdf", dest_dir=str(tmp_path),
+        account="me@example.com",
     )
     saved = tmp_path / "invoice.pdf"
     assert saved.read_bytes() == raw
@@ -130,6 +131,8 @@ def test_attachment_save_falls_back_to_placeholder_name(monkeypatch, tmp_path):
         gmail_tools, "service",
         lambda *a, **k: _mock_service(attachment_get_return={"data": data}),
     )
-    result = gmail_tools.attachment_save("MSG1", "ATT99999999", dest_dir=str(tmp_path))
+    result = gmail_tools.attachment_save(
+        "MSG1", "ATT99999999", dest_dir=str(tmp_path), account="me@example.com"
+    )
     assert result["filename"] == "attachment-ATT99999"
     assert (tmp_path / "attachment-ATT99999").read_bytes() == raw

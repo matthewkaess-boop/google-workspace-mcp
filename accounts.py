@@ -10,7 +10,7 @@ interpreter (e.g. a uv-managed Python). Tokens are keyed by account email.
 client_secret.json (the OAuth app identifier, not a user secret) sits on disk
 at CLIENT_SECRET_PATH and is gitignored; tokens.json must be gitignored too.
 
-Design: every Gmail/Calendar call takes an `account` email. We look up that
+Design: every call REQUIRES an `account` email (no implicit default). We look up that
 account's refresh token via the token store, rebuild Credentials, auto-refresh
 if the access token expired, and hand back a googleapiclient service object.
 """
@@ -242,7 +242,19 @@ def default_account() -> str:
 
 
 def _resolve(account: str | None) -> str:
-    return (account or "").strip() or default_account()
+    """Return the normalized account email. `account` is mandatory.
+
+    There is deliberately no silent fallback to a default account: with several
+    mailboxes connected, a forgotten argument must fail loudly rather than send
+    or share from whichever account happens to be first in the index.
+    """
+    email = (account or "").strip().lower()
+    if not email:
+        known = ", ".join(list_accounts()) or "none yet -- run gws_account_add"
+        raise AccountError(
+            f"`account` is required on every call. Authorized accounts: {known}."
+        )
+    return email
 
 
 def client_config() -> dict:

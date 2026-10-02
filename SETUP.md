@@ -144,25 +144,16 @@ tokens if you *add* scopes without removing any — but in practice the safer
 path is to revoke and re-consent. Google's token endpoint will not expand a
 refresh token's scope silently.)
 
-## 7. Set a default account (optional)
+## 7. No default account (hardened fork)
 
-The first authorized account becomes default automatically. To override,
-set `GWS_DEFAULT_ACCOUNT` — in `~/.zshrc` on macOS:
+This fork has **no implicit default account**. Every tool requires an explicit
+`account` email, and a call without one fails with the list of authorized
+accounts. `GWS_DEFAULT_ACCOUNT` is ignored by tool calls.
 
-```bash
-export GWS_DEFAULT_ACCOUNT="you@yourcompany.com"
-```
-
-On Windows, set it for your user so every Claude Code session sees it:
-
-```powershell
-[Environment]::SetEnvironmentVariable('GWS_DEFAULT_ACCOUNT', 'you@yourcompany.com', 'User')
-```
-
-Either way it can also go on the register line as another `-e` pair, which
-is the one place that works identically on every platform.
-
-Every `gmail_*` and `cal_*` tool takes an optional `account` param that overrides this.
+Local file access is confined to `~/.claude/google-workspace-mcp/downloads`
+and `.../uploads`. Add folders with `GWS_ALLOWED_DIRS` (colon-separated).
+Drive ownership transfer is refused unless `GWS_ALLOW_OWNER_TRANSFER=1`.
+Every write is logged with its account in `~/.claude/google-workspace-mcp/audit.log`.
 
 ### Time zone
 
