@@ -266,7 +266,8 @@ def test_attachment_save_writes_through_the_sanitizer(monkeypatch, tmp_path):
     monkeypatch.setattr(gmail_tools, "service", lambda *a, **k: _Svc())
 
     result = gmail_tools.attachment_save(
-        "MSG1", "ATT12345678", filename="../../Q3: notes?.pdf", dest_dir=str(tmp_path)
+        "MSG1", "ATT12345678", filename="../../Q3: notes?.pdf", dest_dir=str(tmp_path),
+        account="me@example.com",
     )
 
     written = Path(result["path"])

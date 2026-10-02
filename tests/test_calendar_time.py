@@ -70,6 +70,7 @@ def test_event_body_offset_agrees_with_its_timezone_field(monkeypatch):
 
     monkeypatch.setattr(C, "service", lambda *a, **k: _Svc())
     C.create_event(
+        account="me@example.com",
         summary="Standup",
         start="2026-08-18T09:00:00",
         end="2026-08-18T10:00:00",

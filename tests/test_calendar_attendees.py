@@ -94,7 +94,7 @@ def _call_tool(name, arguments):
 
 def test_create_event_sends_optional_guests_as_optional(calendar):
     fake = calendar()
-    C.create_event(summary="Sync", attendees=[REQUIRED], optional_attendees=[OPTIONAL], **WHEN)
+    C.create_event(account="me@example.com", summary="Sync", attendees=[REQUIRED], optional_attendees=[OPTIONAL], **WHEN)
 
     assert _sent_attendees(fake) == [
         {"email": REQUIRED},
@@ -104,7 +104,7 @@ def test_create_event_sends_optional_guests_as_optional(calendar):
 
 def test_create_event_accepts_optional_guests_on_their_own(calendar):
     fake = calendar()
-    C.create_event(summary="Sync", optional_attendees=[OPTIONAL], **WHEN)
+    C.create_event(account="me@example.com", summary="Sync", optional_attendees=[OPTIONAL], **WHEN)
 
     assert _sent_attendees(fake) == [{"email": OPTIONAL, "optional": True}]
 
@@ -113,7 +113,7 @@ def test_create_event_guest_in_both_lists_is_invited_once_as_optional(calendar):
     """Listing everyone in attendees and then naming who is optional is a natural
     way to read the two parameters. It must not send the same guest twice."""
     fake = calendar()
-    C.create_event(
+    C.create_event(account="me@example.com", 
         summary="Sync",
         attendees=[REQUIRED, "Optional@Example.com"],
         optional_attendees=[OPTIONAL],
@@ -133,7 +133,7 @@ def test_create_event_guest_in_both_lists_is_invited_once_as_optional(calendar):
 
 def test_update_event_invites_a_new_guest_as_optional(calendar):
     fake = calendar(HOST)
-    C.update_event(event_id="evt-1", attendees_add_optional=[OPTIONAL])
+    C.update_event(account="me@example.com", event_id="evt-1", attendees_add_optional=[OPTIONAL])
 
     assert _sent_attendees(fake) == [HOST, {"email": OPTIONAL, "optional": True}]
 
@@ -142,7 +142,7 @@ def test_update_event_marks_an_existing_guest_optional_and_keeps_their_rsvp(cale
     """Re-adding the guest would reset their response; flipping the flag must not."""
     guest = {"email": "guest@example.com", "responseStatus": "accepted"}
     fake = calendar(HOST, guest)
-    C.update_event(event_id="evt-1", attendees_add_optional=["Guest@Example.com"])
+    C.update_event(account="me@example.com", event_id="evt-1", attendees_add_optional=["Guest@Example.com"])
 
     assert _sent_attendees(fake) == [HOST, {**guest, "optional": True}]
 
@@ -156,7 +156,7 @@ def test_cal_create_event_tool_forwards_optional_attendees(calendar):
     fake = calendar()
     _call_tool(
         "cal_create_event",
-        {"summary": "Sync", "attendees": [REQUIRED], "optional_attendees": [OPTIONAL], **WHEN},
+        {"account": "me@example.com", "summary": "Sync", "attendees": [REQUIRED], "optional_attendees": [OPTIONAL], **WHEN},
     )
 
     assert _sent_attendees(fake) == [
@@ -167,7 +167,7 @@ def test_cal_create_event_tool_forwards_optional_attendees(calendar):
 
 def test_cal_update_event_tool_forwards_attendees_add_optional(calendar):
     fake = calendar(HOST)
-    _call_tool("cal_update_event", {"event_id": "evt-1", "attendees_add_optional": [OPTIONAL]})
+    _call_tool("cal_update_event", {"account": "me@example.com", "event_id": "evt-1", "attendees_add_optional": [OPTIONAL]})
 
     assert _sent_attendees(fake) == [HOST, {"email": OPTIONAL, "optional": True}]
 
@@ -179,21 +179,21 @@ def test_cal_update_event_tool_forwards_attendees_add_optional(calendar):
 
 def test_create_event_without_optional_guests_sends_bare_emails(calendar):
     fake = calendar()
-    C.create_event(summary="Sync", attendees=[REQUIRED, OPTIONAL], **WHEN)
+    C.create_event(account="me@example.com", summary="Sync", attendees=[REQUIRED, OPTIONAL], **WHEN)
 
     assert _sent_attendees(fake) == [{"email": REQUIRED}, {"email": OPTIONAL}]
 
 
 def test_create_event_with_no_guests_sends_no_attendees_field(calendar):
     fake = calendar()
-    C.create_event(summary="Sync", **WHEN)
+    C.create_event(account="me@example.com", summary="Sync", **WHEN)
 
     assert "attendees" not in fake.sent["body"]
 
 
 def test_update_event_attendees_add_still_invites_as_required(calendar):
     fake = calendar(HOST)
-    C.update_event(event_id="evt-1", attendees_add=[REQUIRED])
+    C.update_event(account="me@example.com", event_id="evt-1", attendees_add=[REQUIRED])
 
     assert _sent_attendees(fake) == [HOST, {"email": REQUIRED}]
 
@@ -201,7 +201,7 @@ def test_update_event_attendees_add_still_invites_as_required(calendar):
 def test_update_event_attendees_add_leaves_an_existing_optional_guest_as_is(calendar):
     optional_guest = {"email": OPTIONAL, "optional": True, "responseStatus": "needsAction"}
     fake = calendar(HOST, optional_guest)
-    C.update_event(event_id="evt-1", attendees_add=[OPTIONAL])
+    C.update_event(account="me@example.com", event_id="evt-1", attendees_add=[OPTIONAL])
 
     assert _sent_attendees(fake) == [HOST, optional_guest]
 
@@ -209,6 +209,6 @@ def test_update_event_attendees_add_leaves_an_existing_optional_guest_as_is(cale
 def test_update_event_without_guest_changes_sends_the_guest_list_it_fetched(calendar):
     optional_guest = {"email": OPTIONAL, "optional": True, "responseStatus": "needsAction"}
     fake = calendar(HOST, optional_guest)
-    C.update_event(event_id="evt-1", summary="Renamed")
+    C.update_event(account="me@example.com", event_id="evt-1", summary="Renamed")
 
     assert _sent_attendees(fake) == [HOST, optional_guest]
