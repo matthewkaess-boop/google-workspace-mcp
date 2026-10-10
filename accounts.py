@@ -51,7 +51,13 @@ from googleapiclient.discovery import build
 
 BASE_DIR = Path(__file__).parent
 CLIENT_SECRET_PATH = BASE_DIR / "client_secret.json"
-ACCOUNTS_INDEX_PATH = BASE_DIR / "accounts_index.json"
+# GWS_ACCOUNTS_INDEX moves the account list out of the code folder, which a
+# packaged install replaces on every update.
+ACCOUNTS_INDEX_PATH = (
+    Path(os.environ["GWS_ACCOUNTS_INDEX"]).expanduser()
+    if os.environ.get("GWS_ACCOUNTS_INDEX", "").strip()
+    else BASE_DIR / "accounts_index.json"
+)
 
 KEYRING_SERVICE = "google-workspace-mcp"
 
@@ -103,6 +109,7 @@ def _load_index() -> list[str]:
 
 
 def _save_index(emails: Iterable[str]) -> None:
+    ACCOUNTS_INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
     ACCOUNTS_INDEX_PATH.write_text(
         json.dumps(sorted(set(emails)), indent=2), encoding="utf-8"
     )

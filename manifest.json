@@ -1,9 +1,9 @@
 {
   "manifest_version": "0.4",
   "name": "google-workspace-mcp",
-  "display_name": "Multi-account MCP for Gmail, Calendar, Drive, Docs, and Sheets \u2014 61 tools, token",
-  "version": "0.1.0",
-  "description": "Multi-account MCP for Gmail, Calendar, Drive, Docs, and Sheets \u2014 61 tools, token-efficient, OS keyring-backed. macOS, Windows and Linux.",
+  "display_name": "Google Workspace (multi-account)",
+  "version": "0.2.0",
+  "description": "Multi-account Gmail, Calendar, Drive, Docs and Sheets for Claude. Every call must name the account; writes are audited and file access is confined. macOS and Linux.",
   "author": {
     "name": "adelaidasofia",
     "url": "https://github.com/adelaidasofia"
@@ -27,13 +27,14 @@
     "type": "python",
     "entry_point": "server.py",
     "mcp_config": {
-      "command": "python3",
+      "command": "/bin/sh",
       "args": [
-        "${__dirname}/server.py"
+        "${__dirname}/launch.sh"
       ],
       "env": {
-        "GOOGLE_OAUTH_CLIENT_ID": "${user_config.google_oauth_client_id}",
-        "GOOGLE_OAUTH_CLIENT_SECRET": "${user_config.google_oauth_client_secret}"
+        "GWS_CLIENT_ID": "${user_config.google_oauth_client_id}",
+        "GWS_CLIENT_SECRET": "${user_config.google_oauth_client_secret}",
+        "GWS_ACCOUNTS_INDEX": "${user_config.accounts_index_path}"
       }
     }
   },
@@ -42,7 +43,6 @@
     "claude_desktop": ">=0.10.0",
     "platforms": [
       "darwin",
-      "win32",
       "linux"
     ]
   },
@@ -50,16 +50,22 @@
     "google_oauth_client_id": {
       "type": "string",
       "title": "Google OAuth client ID",
-      "description": "From console.cloud.google.com",
+      "description": "OAuth client ID from Google Cloud Console (ends in .apps.googleusercontent.com).",
       "required": true,
       "sensitive": false
     },
     "google_oauth_client_secret": {
       "type": "string",
       "title": "Google OAuth client secret",
-      "description": "From console.cloud.google.com",
+      "description": "OAuth client secret from the same OAuth client. Stored by Claude Desktop, not in a file you edit.",
       "required": true,
       "sensitive": true
+    },
+    "accounts_index_path": {
+      "type": "file",
+      "title": "Accounts index (optional)",
+      "description": "Path to an existing accounts_index.json to reuse the accounts you already authorized. Leave blank to start a separate list in ~/.claude/google-workspace-mcp/.",
+      "required": false
     }
   }
 }
