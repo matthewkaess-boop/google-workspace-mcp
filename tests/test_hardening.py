@@ -161,3 +161,10 @@ def test_share_without_account_fails_before_any_api_call(monkeypatch):
     with pytest.raises(accounts.AccountError):
         drive_tools.share("F1", "a@b.com", role="reader")
     svc.permissions().create.assert_not_called()
+
+
+def test_account_list_reports_no_default(monkeypatch):
+    import server
+    monkeypatch.setattr(accounts, "list_accounts", lambda: ["a@x.com", "b@y.com"])
+    out = server.gws_account_list()
+    assert out == {"accounts": ["a@x.com", "b@y.com"], "count": 2}

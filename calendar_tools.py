@@ -421,10 +421,7 @@ def respond(
     svc = service("calendar", "v3", account=account)
     event = svc.events().get(calendarId=calendar_id, eventId=event_id).execute()
 
-    me = (account or "").lower()
-    if not me:
-        from accounts import default_account
-        me = default_account().lower()
+    me = _resolve(account)
 
     attendees = event.get("attendees", []) or []
     found = False

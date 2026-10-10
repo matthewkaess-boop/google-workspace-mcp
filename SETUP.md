@@ -187,7 +187,7 @@ taken exactly as given and ignores all of this.
 Call gws_account_list
 ```
 
-Should return `{"accounts": ["you@yourcompany.com", "you@gmail.com"], "default": "you@yourcompany.com", "count": 2}`.
+Should return `{"accounts": ["you@yourcompany.com", "you@gmail.com"], "count": 2}`.
 
 Then:
 

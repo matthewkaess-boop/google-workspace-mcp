@@ -80,8 +80,6 @@ SCOPES = [
     "openid",                                              # OIDC id_token
 ]
 
-DEFAULT_ACCOUNT_ENV = "GWS_DEFAULT_ACCOUNT"
-
 # The OAuth client (a Desktop app) comes from env or from client_secret.json.
 # Env wins, so a client can register the connector in one command with no file on
 # disk — the shape microsoft-365-mcp already uses for M365_CLIENT_ID. For a
@@ -233,19 +231,6 @@ def list_accounts() -> list[str]:
     verified lazily by _credentials_for(), which fails loud if a token is gone.
     """
     return _load_index()
-
-
-def default_account() -> str:
-    """Return the default account: env override, else first account in index."""
-    env_default = os.environ.get(DEFAULT_ACCOUNT_ENV, "").strip()
-    if env_default:
-        return env_default
-    accounts = list_accounts()
-    if not accounts:
-        raise AccountError(
-            "No accounts configured. Run gws_account_add first, or see SETUP.md."
-        )
-    return accounts[0]
 
 
 def _resolve(account: str | None) -> str:

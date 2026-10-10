@@ -54,14 +54,10 @@ def gws_account_add() -> dict:
 
 @mcp.tool()
 def gws_account_list() -> dict:
-    """List all authorized Google accounts and which one is the default."""
+    """List all authorized Google accounts. There is no default: pass one of
+    these as `account` on every other tool."""
     all_accounts = accounts.list_accounts()
-    default = ""
-    try:
-        default = accounts.default_account()
-    except accounts.AccountError:
-        pass
-    return {"accounts": all_accounts, "default": default, "count": len(all_accounts)}
+    return {"accounts": all_accounts, "count": len(all_accounts)}
 
 
 @mcp.tool()
