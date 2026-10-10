@@ -2,7 +2,7 @@
   "manifest_version": "0.4",
   "name": "google-workspace-mcp",
   "display_name": "Google Workspace (multi-account)",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "Multi-account Gmail, Calendar, Drive, Docs and Sheets for Claude. Every call must name the account; writes are audited and file access is confined. macOS and Linux.",
   "author": {
     "name": "adelaidasofia",

@@ -43,6 +43,13 @@ if [ ! -f "$READY" ]; then
   LOCK="$VENV.lock"
   waited=0
   until [ -f "$READY" ] || mkdir "$LOCK" 2>/dev/null; do
+    # An install takes seconds; a lock this old was left by a copy that was
+    # killed outright (SIGKILL, crash, power loss). Clear it and retry.
+    if [ -n "$(find "$LOCK" -maxdepth 0 -mmin +10 2>/dev/null)" ]; then
+      echo "google-workspace: removing stale lock $LOCK" >&2
+      rmdir "$LOCK" 2>/dev/null || true
+      continue
+    fi
     if [ "$waited" -ge 300 ]; then
       echo "google-workspace: gave up waiting for $LOCK (remove it if no install is running)" >&2
       exit 1
@@ -56,6 +63,7 @@ if [ ! -f "$READY" ]; then
     rmdir "$LOCK" 2>/dev/null || true
   else
     trap 'rmdir "$LOCK" 2>/dev/null' EXIT
+    trap 'exit 143' TERM; trap 'exit 130' INT; trap 'exit 129' HUP
     echo "google-workspace: first run, installing dependencies into $VENV" >&2
     rm -rf "$VENV"
     "$PY" -m venv "$VENV" >&2
@@ -64,7 +72,7 @@ if [ ! -f "$READY" ]; then
     else
       rm -rf "$VENV"; echo "google-workspace: dependency install failed" >&2; exit 1
     fi
-    rmdir "$LOCK" 2>/dev/null; trap - EXIT
+    rmdir "$LOCK" 2>/dev/null; trap - EXIT TERM INT HUP
   fi
 fi
 
